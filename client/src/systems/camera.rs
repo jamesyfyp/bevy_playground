@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::input::mouse::{MouseMotion, MouseScrollUnit, MouseWheel};
 use std::f32::consts::{FRAC_PI_2, PI, TAU};
+use crate::Player;
 
 // Bundle to spawn our custom camera easily
 #[derive(Bundle, Default)]
@@ -251,4 +252,26 @@ pub fn pan_orbit_camera(
             transform.translation = state.center + transform.back() * state.radius;
         }
     }
+}
+
+pub fn camera_follow(
+    mut player_q: Query<&mut Transform, With<Player>>, // Player query (mutable)
+    mut pan_orbit_q: Query<&mut PanOrbitState>,
+    mut camera_q: Query<&mut Transform, (With<Camera>, Without<Player>)>
+     // Camera query (immutable, excluding Player)
+) {
+    let player_tfm = player_q.get_single_mut().expect("Error: Could not find a single player.");
+    let mut pan_orbit_state = pan_orbit_q.get_single_mut().expect("Error: Could not find a single camera.");
+    let mut camera_tfm  = camera_q.get_single_mut().expect("Error: Could not find a single camera.");
+    
+    // Get the rotation of the camera, and ignore pitch (up/down)
+    let yaw = camera_tfm.rotation.to_euler(EulerRot::YXZ).0; // Extract yaw (rotation around Y-axis)
+
+    // Compute the forward and right directions from the camera (ignoring vertical angle)
+    let right = Quat::from_rotation_y(yaw).mul_vec3(Vec3::X).normalize();
+
+    // Update the camera's center to follow the player add right to off center player
+    pan_orbit_state.center = player_tfm.translation+right*1.5; 
+    camera_tfm.rotation = Quat::from_euler(EulerRot::YXZ, pan_orbit_state.yaw, pan_orbit_state.pitch, 0.0);
+    camera_tfm.translation = pan_orbit_state.center + camera_tfm.back() * pan_orbit_state.radius;   
 }

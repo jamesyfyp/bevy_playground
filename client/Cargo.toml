@@ -7,7 +7,6 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.15.1", features = ["bevy_dev_tools"] }
-
 bevy-inspector-egui = "0.28.1"
 iyes_perf_ui = "0.3.0"
 avian3d = "0.2"
